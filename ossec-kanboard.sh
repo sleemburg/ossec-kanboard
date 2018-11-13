@@ -42,6 +42,7 @@ declare -a apiid=(
 declare -A jsonargs
 
 BASE=$(readlink -f "$(dirname $0)/../..")
+MYNAME$(basename $0)
 
 # ------------------------------------------------------------------------------
 # private functions
@@ -109,12 +110,17 @@ function log() {
 # ------------------------------------------------------------------------------
 # main
 # ------------------------------------------------------------------------------
+log "${MYNAME}: $@"
+
+SRCIP=$3
+ALERTID=$4
+RULEID=$5
 
 # exit if delete is requested
 
 [ "$1" == "delete" ] && exit 0;
 
-[ $# -lt 5 ] && {
+[ $# -lt 7 ] && {
 	log "Too few arguments"
 	exit 1
 }
@@ -135,20 +141,7 @@ done
 	exit 1
 }
 
-# ------------------------------------------------------------------------------
-# jsonout_output is unfortunately useless, as the alertid is missing...
-# ------------------------------------------------------------------------------
-JSONLOG=$(sed -n '/<jsonout_output>/{;s/.*>\(.*\)<\/.*/\1/p}' ${BASE}/etc/ossec.conf)
-
-## log "Invoke: $@"
-
 . "${BASE}/etc/kanboard.conf" 
-
-ALERTID=$4
-RULEID=$5
-
-ALERTTIME=$(echo "$ALERTID" | cut -d  "." -f 1)
-ALERTLAST=$(echo "$ALERTID" | cut -d  "." -f 2)
 
 max=0
 while read line
@@ -156,8 +149,6 @@ do
 	MSG[$max]="$line"
 	let max++
 done < <(grep -A10 "$ALERTID" "${BASE}/logs/alerts/alerts.log"|sed '/^$/,$d')
-
-ALERTMSG=""
 
 # line 1: Alertid, section name
 # line 2: timestamp, host->source
